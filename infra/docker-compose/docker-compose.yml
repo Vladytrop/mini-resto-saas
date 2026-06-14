@@ -1,0 +1,29 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: resto-postgres
+    environment:
+      POSTGRES_USER: resto_admin
+      POSTGRES_PASSWORD: resto_secret
+      POSTGRES_DB: resto_saas
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - resto-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U resto_admin -d resto_saas"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+
+networks:
+  resto-network:
+    driver: bridge
