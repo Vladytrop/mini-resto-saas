@@ -5,11 +5,13 @@ import com.resto.saas.loyalty.service.LoyaltyService;
 import com.resto.saas.shared.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.osgi.annotation.bundle.Header;
+import org.springframework.kafka.annotation.DltHandler;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.annotation.RetryableTopic;
 import org.springframework.kafka.retrytopic.DltStrategy;
 import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.retry.annotation.Backoff;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -22,12 +24,11 @@ public class OrderEventConsumer {
     @RetryableTopic(
             attempts = "3",
             backoff = @Backoff(delay = 1000, multiplier = 2.0, maxDelay = 10000),
-            include = {RuntimeException.class, Exception.class},
-            exclude = {org.springframework.kafka.support.serializer.DeserializationException.class},
             dltStrategy = DltStrategy.FAIL_ON_ERROR,
-            autoCreateTopic = true,
+            autoCreateTopics = "true",
             topicSuffixingStrategy =
-                    org.springframework.kafka.retrytopic.TopicSuffixingStrategy.SUFFIX_WITH_INDEX_VALUE
+                    org.springframework.kafka.retrytopic.TopicSuffixingStrategy.SUFFIX_WITH_INDEX_VALUE,
+            kafkaTemplate = "retryableTopicKafkaTemplate"
     )
     @KafkaListener(topics = "orders", groupId = "loyalty-service")
     public void handleOrderCreated(OrderCreatedEvent event) {
@@ -44,10 +45,6 @@ public class OrderEventConsumer {
         }
 
         TenantContext.setTenant(event.tenantId());
-
-        log.info(">>> После setTenant: isSet={}, tenant={}",
-                TenantContext.isSet(), TenantContext.getTenant());
-
         try {
             log.info("Обработка события: orderId={}, tenant={}, totalAmount{}",
                     event.orderId(),
@@ -60,14 +57,14 @@ public class OrderEventConsumer {
         }
     }
 
+    @DltHandler
     public void handleDlt(
             OrderCreatedEvent event,
             @Header(KafkaHeaders.RECEIVED_TOPIC) String topic
     ) {
-        log.error("!!! СООБЩЕНИЕ В DLQ: orderId={}, tenant={}, topic={}. Требуется ручная обработка!",
-                event.orderId(),
-                event.tenantId(),
-                topic
-        );
+
+        log.error("!!! DLQ(Dead Letter Queue, «очередь мертвых сообщений): orderId={}, tenant={}, amount={}." +
+                        " Требуется ручная обработка!",
+                event.orderId(), event.tenantId(), event.totalAmount());
     }
 }

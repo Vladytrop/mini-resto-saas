@@ -22,14 +22,16 @@ public class LoyaltyService {
     @Transactional
     public void processOrderCreated(OrderCreatedEvent event) {
 
-        log.info(">>> Внутри @Transactional: isSet={}, tenant={}",
-                TenantContext.isSet(), TenantContext.getTenant());
-
         log.info("Обработка события: orderId={}, tenant={}, totalAmount{}",
                 event.orderId(),
                 event.tenantId(),
                 event.totalAmount()
         );
+
+//        проверка DLQ
+//        if (event.totalAmount().compareTo(BigDecimal.valueOf(1000)) > 0) {
+//            throw new RuntimeException("Имитация ошибки для теста DLQ");
+//        }
 
         if (!TenantContext.isSet()){
             throw new IllegalArgumentException("TenantContext не установлен перед @Transactional");
@@ -39,18 +41,11 @@ public class LoyaltyService {
                 .divide(BigDecimal.TEN, RoundingMode.DOWN)
                 .intValue();
 
-        log.info(">>> TenantContext: {}", TenantContext.getTenant());
-
         LoyaltyAccount account = repository
                 .findByTenantIdAndCustomerName(event.tenantId(), event.customerName())
                 .orElseGet(() -> createNewAccount(event));
 
-        log.info(">>> Account tenantId: {}", account.getTenantId());
-
-        account.setPoints(pointToAdd);
-
-        log.info(">>> Перед save: tenantId = '{}', TenantContext = '{}'",
-                account.getTenantId(), TenantContext.getTenant());
+        account.setPoints(account.getPoints() + pointToAdd);
         repository.save(account);
 
         log.info("Начислено {} баллов.Итого: {} для {}(tenant: {})",
