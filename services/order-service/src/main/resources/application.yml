@@ -2,6 +2,34 @@ server:
   port: 8081
 
 spring:
+
+  data:
+    redis:
+      sentinel:
+        master:  mymaster
+        nodes:
+          - localhost:26379
+          - localhost:26380
+          - localhost:26381
+      password:
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 4
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 600000
+      cache-null-values: false
+      key-prefix: "resto:"
+      use-key-prefix: true
+
+  session:
+    timeout: 30m
+    store-type: redis
+
   application:
     name: order-service
 

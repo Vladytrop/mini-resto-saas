@@ -8,6 +8,9 @@ import com.resto.saas.order.repository.OrderRepository;
 import com.resto.saas.shared.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +27,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final KafkaTemplate<String, OrderCreatedEvent> kafkaTemplate;
 
+    @Cacheable(value = "orders", key = "T(com.resto.saas.shared.tenant.TenantContext).getTenant() + ':list'")
     @Transactional(readOnly = true)
     public List<OrderResponse> getAllOrders() {
         return orderRepository.findAllByOrderByCreatedAtDesc()
@@ -32,6 +36,7 @@ public class OrderService {
             .collect(Collectors.toList());
     }
 
+    @Cacheable(value = "orders", key = "T(com.resto.saas.shared.tenant.TenantContext).getTenant() + ':' + #id")
     @Transactional(readOnly = true)
     public OrderResponse getOrder(UUID id) {
         Order order = orderRepository.findById(id)
@@ -39,6 +44,7 @@ public class OrderService {
         return OrderResponse.fromEntity(order);
     }
 
+    @CacheEvict(value = "orders", key = "T(com.resto.saas.shared.tenant.TenantContext).getTenant() + ':list'")
     @Transactional
     public OrderResponse createOrder(CreateOrderRequest request) {
         Order order = Order.builder()
@@ -63,6 +69,10 @@ public class OrderService {
         return OrderResponse.fromEntity(saved);
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "orders", key = "T(com.resto.saas.shared.tenant.TenantContext).getTenant() + ':list'"),
+            @CacheEvict(value = "orders", key = "T(com.resto.saas.shared.tenant.TenantContext).getTenant() + ':' + #id")
+    })
     @Transactional
     public OrderResponse updateStatus(UUID id, Order.OrderStatus newStatus) {
         Order order = orderRepository.findById(id)
