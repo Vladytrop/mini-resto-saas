@@ -3,9 +3,12 @@ package com.resto.saas.order.service;
 import com.resto.saas.order.dto.CreateOrderRequest;
 import com.resto.saas.order.dto.OrderResponse;
 import com.resto.saas.order.entity.Order;
+import com.resto.saas.order.event.OrderCreatedEvent;
 import com.resto.saas.order.repository.OrderRepository;
+import com.resto.saas.shared.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +22,7 @@ import java.util.stream.Collectors;
 public class OrderService {
 
     private final OrderRepository orderRepository;
+    private final KafkaTemplate<String, OrderCreatedEvent> kafkaTemplate;
 
     @Transactional(readOnly = true)
     public List<OrderResponse> getAllOrders() {
@@ -44,6 +48,17 @@ public class OrderService {
 
         Order saved = orderRepository.save(order);
         log.info("Created order: {} for customer: {}", saved.getId(), saved.getCustomerName());
+
+        OrderCreatedEvent event = new OrderCreatedEvent(
+                saved.getId(),
+                TenantContext.getTenant(),
+                saved.getCustomerName(),
+                saved.getTotalAmount(),
+                saved.getStatus().name()
+        );
+
+        kafkaTemplate.send("orders", saved.getId().toString(), event);
+        log.info("Sent in order event {}", event);
 
         return OrderResponse.fromEntity(saved);
     }

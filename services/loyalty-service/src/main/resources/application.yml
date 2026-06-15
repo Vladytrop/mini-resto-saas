@@ -1,0 +1,57 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: loyalty-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/resto_saas
+    username: resto_app
+    password: app_secret
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  kafka:
+    bootstrap-servers: localhost:19092,localhost:19093,localhost:19094
+    consumer:
+      group-id: loyalty-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.value.default.type: com.resto.saas.loyalty.event.OrderCreatedEvent
+        spring.json.trusted.packages: com.resto.saas.order.event,com.resto.saas.loyalty.event
+    listener:
+      ack-mode: record
+      missing-topics-fatal: false
+    retry:
+      topic:
+        enabled: true
+        attempts: 3
+        backoff:
+          delay: 1000
+          multiplier: 2.0
+          max-delay: 10000
+        include: java.lang.RunTimeException, java.lang.Exception
+        exclude: org.springframework.kafka.support.serializer.DeserializationException
+        dlt-topic-suffix: .dlt
+        auto-create-topic: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+logging:
+  level:
+    com.resto.saas: DEBUG

@@ -1,6 +1,81 @@
 version: "3.9"
 
 services:
+  kafka-1:
+    image: apache/kafka:3.7.0
+    container_name: resto-kafka-1
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@resto-kafka-1:9093,2@resto-kafka-2:9093,3@resto-kafka-3:9093
+
+      KAFKA_LISTENERS: INTERNAL://resto-kafka-1:9092,EXTERNAL://0.0.0.0:9094,CONTROLLER://resto-kafka-1:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://resto-kafka-1:9092,EXTERNAL://localhost:19092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 3
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    volumes:
+      - kafka-1-data:/tmp/kraft-combined-logs
+    ports:
+      - 19092:9094
+    networks:
+      - resto-network
+
+  kafka-2:
+    image: apache/kafka:3.7.0
+    container_name: resto-kafka-2
+    environment:
+      KAFKA_NODE_ID: 2
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@resto-kafka-1:9093,2@resto-kafka-2:9093,3@resto-kafka-3:9093
+
+      KAFKA_LISTENERS: INTERNAL://resto-kafka-2:9092,EXTERNAL://0.0.0.0:9094,CONTROLLER://resto-kafka-2:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://resto-kafka-2:9092,EXTERNAL://localhost:19093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 3
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    volumes:
+      - kafka-2-data:/tmp/kraft-combined-logs
+    ports:
+      - 19093:9094
+    networks:
+      - resto-network
+
+  kafka-3:
+    image: apache/kafka:3.7.0
+    container_name: resto-kafka-3
+    environment:
+      KAFKA_NODE_ID: 3
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@resto-kafka-1:9093,2@resto-kafka-2:9093,3@resto-kafka-3:9093
+
+      KAFKA_LISTENERS: INTERNAL://resto-kafka-3:9092,EXTERNAL://0.0.0.0:9094,CONTROLLER://resto-kafka-3:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://resto-kafka-3:9092,EXTERNAL://localhost:19094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 3
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    volumes:
+      - kafka-3-data:/tmp/kraft-combined-logs
+    ports:
+      - 19094:9094
+    networks:
+      - resto-network
+
   postgres:
     image: postgres:16-alpine
     container_name: resto-postgres
@@ -23,6 +98,9 @@ services:
 
 volumes:
   postgres_data:
+  kafka-1-data:
+  kafka-2-data:
+  kafka-3-data:
 
 networks:
   resto-network:

@@ -2,5 +2,6 @@ rootProject.name = "mini-resto-saas"
 
 include(
     "services:shared",
-    "services:order-service"
+    "services:order-service",
+    "services:loyalty-service"
 )
