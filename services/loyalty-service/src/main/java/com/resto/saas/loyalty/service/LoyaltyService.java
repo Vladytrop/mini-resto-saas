@@ -1,5 +1,6 @@
 package com.resto.saas.loyalty.service;
 
+import com.resto.saas.loyalty.dto.LoyaltyAccountDto;
 import com.resto.saas.loyalty.entity.LoyaltyAccount;
 import com.resto.saas.loyalty.event.OrderCreatedEvent;
 import com.resto.saas.loyalty.repository.LoyaltyAccountRepository;
@@ -11,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -18,6 +20,14 @@ import java.math.RoundingMode;
 public class LoyaltyService {
 
     private final LoyaltyAccountRepository repository;
+
+    @Transactional(readOnly = true)
+    public LoyaltyAccountDto getBalance(String customerName) {
+        String tenantId = TenantContext.getTenant();
+        return (LoyaltyAccountDto) repository.findByTenantIdAndCustomerName(tenantId, customerName)
+                .map(this::toDto)
+                .orElse(new LoyaltyAccountDto(UUID.randomUUID(),tenantId,customerName, 0));
+    }
 
     @Transactional
     public void processOrderCreated(OrderCreatedEvent event) {
@@ -58,5 +68,14 @@ public class LoyaltyService {
                 .customerName(event.customerName())
                 .points(0)
                 .build();
+    }
+    private Object toDto(LoyaltyAccount account) {
+
+        return new LoyaltyAccountDto(
+                account.getId(),
+                account.getTenantId(),
+                account.getCustomerName(),
+                account.getPoints()
+        );
     }
 }

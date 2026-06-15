@@ -6,13 +6,16 @@ services:
     container_name: resto-redis-master
     ports:
       - "6379:6379"
-    command: redis-server --port 6379 --appendonly yes --maxmemory 1gb --maxmemory-policy allkeys-lru --bind 0.0.0.0 --protected-mode no
     volumes:
       - redis-master-data:/data
+    command: >
+      sh -c "echo 'appendonly yes' > /etc/redis.conf &&
+             echo 'appendfsync everysec' >> /etc/redis.conf &&
+             redis-server /etc/redis.conf"
     networks:
       - resto-network
     healthcheck:
-      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      test: [ "CMD", "redis-cli", "-a", "resto_redis_pass", "ping" ]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -22,111 +25,20 @@ services:
     container_name: resto-redis-replica
     ports:
       - "6380:6379"
-    command: redis-server --port 6379 --replicaof redis-master 6379 --appendonly yes --bind 0.0.0.0 --protected-mode no
-    volumes:
-      - redis-replica-data:/data
+    command: >
+      sh -c "echo 'replicaof redis-master 6379' > /etc/redis.conf &&
+             echo 'appendonly yes' >> /etc/redis.conf &&
+             redis-server /etc/redis.conf"
+    depends_on:
+      redis-master:
+        condition: service_healthy
     networks:
       - resto-network
-    depends_on:
-      - redis-master
     healthcheck:
-      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      test: [ "CMD", "redis-cli", "-a", "resto_redis_pass", "ping" ]
       interval: 5s
       timeout: 3s
       retries: 5
-
-  redis-sentinel-1:
-    image: redis:7-alpine
-    container_name: resto-redis-sentinel-1
-    ports:
-      - "26379:26379"
-    links:
-      - redis-master:redis-master
-      - redis-replica:redis-replica
-    entrypoint: >
-      sh -c "
-            until ping -c 1 redis-master >/dev/null 2>&1; do
-              echo 'Waiting for redis-master...'
-              sleep 1
-            done &&
-            MASTER_IP=$$(ping -c 1 redis-master | head -1 | awk -F'[()]' '{print $$2}') &&
-            echo 'Master IP: '$$MASTER_IP &&
-            mkdir -p /etc/redis &&
-            echo 'port 26379' > /etc/redis/sentinel.conf &&
-            echo 'sentinel monitor mymaster '$$MASTER_IP' 6379 2' >> /etc/redis/sentinel.conf &&
-            echo 'sentinel down-after-milliseconds mymaster 5000' >> /etc/redis/sentinel.conf &&
-            echo 'sentinel failover-timeout mymaster 10000' >> /etc/redis/sentinel.conf &&
-            echo 'sentinel parallel-syncs mymaster 1' >> /etc/redis/sentinel.conf &&
-            redis-sentinel /etc/redis/sentinel.conf
-            "
-    networks:
-      - resto-network
-    depends_on:
-      - redis-master
-      - redis-replica
-    restart: unless-stopped
-
-  redis-sentinel-2:
-    image: redis:7-alpine
-    container_name: resto-redis-sentinel-2
-    ports:
-      - "26380:26379"
-    links:
-      - redis-master:redis-master
-      - redis-replica:redis-replica
-    entrypoint: >
-      sh -c "
-            until ping -c 1 redis-master >/dev/null 2>&1; do
-              echo 'Waiting for redis-master...'
-              sleep 1
-            done &&
-            MASTER_IP=$$(ping -c 1 redis-master | head -1 | awk -F'[()]' '{print $$2}') &&
-            echo 'Master IP: '$$MASTER_IP &&
-            mkdir -p /etc/redis &&
-            echo 'port 26379' > /etc/redis/sentinel.conf &&
-            echo 'sentinel monitor mymaster '$$MASTER_IP' 6379 2' >> /etc/redis/sentinel.conf &&
-            echo 'sentinel down-after-milliseconds mymaster 5000' >> /etc/redis/sentinel.conf &&
-            echo 'sentinel failover-timeout mymaster 10000' >> /etc/redis/sentinel.conf &&
-            echo 'sentinel parallel-syncs mymaster 1' >> /etc/redis/sentinel.conf &&
-            redis-sentinel /etc/redis/sentinel.conf
-            "
-    networks:
-      - resto-network
-    depends_on:
-      - redis-master
-      - redis-replica
-    restart: unless-stopped
-
-  redis-sentinel-3:
-    image: redis:7-alpine
-    container_name: resto-redis-sentinel-3
-    ports:
-      - "26381:26379"
-    links:
-      - redis-master:redis-master
-      - redis-replica:redis-replica
-    entrypoint: >
-      sh -c "
-            until ping -c 1 redis-master >/dev/null 2>&1; do
-              echo 'Waiting for redis-master...'
-              sleep 1
-            done &&
-            MASTER_IP=$$(ping -c 1 redis-master | head -1 | awk -F'[()]' '{print $$2}') &&
-            echo 'Master IP: '$$MASTER_IP &&
-            mkdir -p /etc/redis &&
-            echo 'port 26379' > /etc/redis/sentinel.conf &&
-            echo 'sentinel monitor mymaster '$$MASTER_IP' 6379 2' >> /etc/redis/sentinel.conf &&
-            echo 'sentinel down-after-milliseconds mymaster 5000' >> /etc/redis/sentinel.conf &&
-            echo 'sentinel failover-timeout mymaster 10000' >> /etc/redis/sentinel.conf &&
-            echo 'sentinel parallel-syncs mymaster 1' >> /etc/redis/sentinel.conf &&
-            redis-sentinel /etc/redis/sentinel.conf
-            "
-    networks:
-      - resto-network
-    depends_on:
-      - redis-master
-      - redis-replica
-    restart: unless-stopped
 
   kafka-1:
     image: apache/kafka:3.7.0
@@ -222,6 +134,28 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  prometheus:
+    image: prom/prometheus:v2.55.0
+    container_name: resto-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - resto-network
+
+  grafana:
+    image: grafana/grafana:11.0.0
+    container_name: resto-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - resto-network
 
 volumes:
   postgres_data:

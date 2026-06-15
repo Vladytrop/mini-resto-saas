@@ -3,6 +3,8 @@ package com.resto.saas.loyalty.controller;
 import com.resto.saas.loyalty.dto.LoyaltyAccountDto;
 import com.resto.saas.loyalty.entity.LoyaltyAccount;
 import com.resto.saas.loyalty.repository.LoyaltyAccountRepository;
+import com.resto.saas.loyalty.service.LoyaltyService;
+import com.resto.saas.shared.dto.ApiResponse;
 import com.resto.saas.shared.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +20,15 @@ import java.util.List;
 public class LoyaltyController {
 
     private final LoyaltyAccountRepository repository;
+    private final LoyaltyService loyaltyService;
+
+    @GetMapping("/{customerName}")
+    public ApiResponse<List<LoyaltyAccountDto>> getBalance(
+            @PathVariable String customerName,
+            @RequestHeader("X-Tenant-Id") String tenantId
+    ) {
+        return ApiResponse.success(loyaltyService.getBalance(customerName));
+    }
 
     @GetMapping
     public ResponseEntity<List<Object>> getAllAccounts(

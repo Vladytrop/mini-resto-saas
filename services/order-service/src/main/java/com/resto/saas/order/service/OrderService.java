@@ -5,6 +5,7 @@ import com.resto.saas.order.dto.OrderResponse;
 import com.resto.saas.order.entity.Order;
 import com.resto.saas.order.event.OrderCreatedEvent;
 import com.resto.saas.order.repository.OrderRepository;
+import com.resto.saas.order.cache.CacheInvalidationPublisher;
 import com.resto.saas.shared.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,27 +27,34 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final KafkaTemplate<String, OrderCreatedEvent> kafkaTemplate;
+    private final CacheInvalidationPublisher cacheInvalidationPublisher;
 
-    @Cacheable(value = "orders", key = "T(com.resto.saas.shared.tenant.TenantContext).getTenant() + ':list'")
+    @Cacheable(value = "orders",
+            key = "T(com.resto.saas.shared.tenant.TenantContext).getTenant() + ':list'")
     @Transactional(readOnly = true)
     public List<OrderResponse> getAllOrders() {
+
         return orderRepository.findAllByOrderByCreatedAtDesc()
             .stream()
             .map(OrderResponse::fromEntity)
             .collect(Collectors.toList());
     }
 
-    @Cacheable(value = "orders", key = "T(com.resto.saas.shared.tenant.TenantContext).getTenant() + ':' + #id")
+    @Cacheable(value = "orders",
+            key = "T(com.resto.saas.shared.tenant.TenantContext).getTenant() + ':' + #id")
     @Transactional(readOnly = true)
     public OrderResponse getOrder(UUID id) {
+
         Order order = orderRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("Order not found: " + id));
         return OrderResponse.fromEntity(order);
     }
 
-    @CacheEvict(value = "orders", key = "T(com.resto.saas.shared.tenant.TenantContext).getTenant() + ':list'")
+    @CacheEvict(value = "orders",
+            key = "T(com.resto.saas.shared.tenant.TenantContext).getTenant() + ':list'")
     @Transactional
     public OrderResponse createOrder(CreateOrderRequest request) {
+
         Order order = Order.builder()
             .customerName(request.getCustomerName())
             .totalAmount(request.getTotalAmount())
@@ -54,6 +62,8 @@ public class OrderService {
 
         Order saved = orderRepository.save(order);
         log.info("Created order: {} for customer: {}", saved.getId(), saved.getCustomerName());
+
+        cacheInvalidationPublisher.invalidate("orders:list");
 
         OrderCreatedEvent event = new OrderCreatedEvent(
                 saved.getId(),
@@ -70,11 +80,14 @@ public class OrderService {
     }
 
     @Caching(evict = {
-            @CacheEvict(value = "orders", key = "T(com.resto.saas.shared.tenant.TenantContext).getTenant() + ':list'"),
-            @CacheEvict(value = "orders", key = "T(com.resto.saas.shared.tenant.TenantContext).getTenant() + ':' + #id")
+            @CacheEvict(value = "orders",
+                    key = "T(com.resto.saas.shared.tenant.TenantContext).getTenant() + ':list'"),
+            @CacheEvict(value = "orders",
+                    key = "T(com.resto.saas.shared.tenant.TenantContext).getTenant() + ':' + #id")
     })
     @Transactional
     public OrderResponse updateStatus(UUID id, Order.OrderStatus newStatus) {
+
         Order order = orderRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("Order not found: " + id));
 
@@ -88,6 +101,7 @@ public class OrderService {
     }
 
     private void validateStatusTransition(Order.OrderStatus current, Order.OrderStatus next) {
+
         boolean valid = switch (current) {
             case CREATED -> next == Order.OrderStatus.CONFIRMED || next == Order.OrderStatus.CANCELLED;
             case CONFIRMED -> next == Order.OrderStatus.READY || next == Order.OrderStatus.CANCELLED;

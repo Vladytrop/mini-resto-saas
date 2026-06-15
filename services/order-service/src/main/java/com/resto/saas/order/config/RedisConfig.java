@@ -2,98 +2,105 @@ package com.resto.saas.order.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import io.lettuce.core.SocketOptions;
-import io.lettuce.core.cluster.ClusterClientOptions;
-import io.lettuce.core.cluster.ClusterTopologyRefreshOptions;
+import com.resto.saas.order.cache.CacheInvalidationSubscriber;
+import io.lettuce.core.ReadFrom;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
-import org.springframework.data.redis.cache.RedisCacheWriter;
-import org.springframework.data.redis.connection.RedisClusterConfiguration;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.RedisStaticMasterReplicaConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.listener.PatternTopic;
+import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
-import java.util.Arrays;
 
 @Configuration
 @EnableCaching
 public class RedisConfig {
 
+//     Master/Replica для кэширования
     @Bean
-    public LettuceConnectionFactory lettuceConnectionFactory() {
-
-        RedisClusterConfiguration clusterConfig = new RedisClusterConfiguration(
-                Arrays.asList(
-                        "localhost:7001",
-                        "localhost:7002",
-                        "localhost:7003",
-                        "localhost:7004",
-                        "localhost:7005",
-                        "localhost:7006"
-                )
-        );
-        clusterConfig.setMaxRedirects(3);
-
-        ClusterTopologyRefreshOptions topologyRefresh = ClusterTopologyRefreshOptions.builder()
-                .enablePeriodicRefresh(Duration.ofSeconds(30))
-                .enableAllAdaptiveRefreshTriggers()
-                .build();
-
-        ClusterClientOptions clientOptions = ClusterClientOptions.builder()
-                .topologyRefreshOptions(topologyRefresh)
-                .socketOptions(SocketOptions.builder()
-                        .connectTimeout(Duration.ofMillis(2000))
-                        .build())
-                .build();
+    @Primary
+    public RedisConnectionFactory redisConnectionFactory() {
+        RedisStaticMasterReplicaConfiguration config =
+                new RedisStaticMasterReplicaConfiguration("localhost", 6379);
+        config.addNode("localhost", 6380);
 
         LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
-                .clientOptions(clientOptions)
-                .commandTimeout(Duration.ofMillis(2000))
+                .readFrom(ReadFrom.REPLICA_PREFERRED)
                 .build();
 
-        return new LettuceConnectionFactory(clusterConfig, clientConfig);
+        return new LettuceConnectionFactory(config, clientConfig);
     }
 
     @Bean
-    public RedisTemplate redisTemplate(LettuceConnectionFactory connectionFactory) {
-
-        RedisTemplate<String, Object> template = new RedisTemplate<>();
-        template.setConnectionFactory(connectionFactory);
-        template.setKeySerializer(new StringRedisSerializer());
-        template.setValueSerializer(new GenericJackson2JsonRedisSerializer(objectMapper()));
-        template.setHashKeySerializer(new StringRedisSerializer());
-        template.setHashValueSerializer(new GenericJackson2JsonRedisSerializer(objectMapper()));
-        return template;
+    @Primary
+    public StringRedisTemplate stringRedisTemplate(
+            @Qualifier("redisConnectionFactory") RedisConnectionFactory connectionFactory) {
+        return new StringRedisTemplate(connectionFactory);
     }
 
     @Bean
-    public ObjectMapper objectMapper() {
-
+    public CacheManager cacheManager(
+            @Qualifier("redisConnectionFactory") RedisConnectionFactory connectionFactory) {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
-        return mapper;
-    }
 
-    @Bean
-    public RedisCacheManager cacheManager(LettuceConnectionFactory connectionFactory) {
+        GenericJackson2JsonRedisSerializer serializer =
+                new GenericJackson2JsonRedisSerializer(mapper);
 
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(10))
-                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer(objectMapper())));
+                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(
+                        new StringRedisSerializer()))
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(
+                        serializer));
+
+        RedisCacheConfiguration ordersConfig = RedisCacheConfiguration.defaultCacheConfig()
+                .entryTtl(Duration.ofMinutes(5))
+                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(
+                        new StringRedisSerializer()))
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(
+                        serializer));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
-                .withCacheConfiguration("menu", RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(10)))
-                .withCacheConfiguration("hot-order", RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1)))
-                .withCacheConfiguration("session", RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(30)))
+                .withCacheConfiguration("orders", ordersConfig)
                 .build();
+    }
+
+//     Standalone для Pub/Sub
+    @Bean("pubSubConnectionFactory")
+    public RedisConnectionFactory pubSubConnectionFactory() {
+        RedisStandaloneConfiguration config = new RedisStandaloneConfiguration("localhost", 6379);
+        return new LettuceConnectionFactory(config);
+    }
+
+    @Bean("pubSubRedisTemplate")
+    public StringRedisTemplate pubSubRedisTemplate(
+            @Qualifier("pubSubConnectionFactory") RedisConnectionFactory connectionFactory) {
+        return new StringRedisTemplate(connectionFactory);
+    }
+
+    @Bean
+    public RedisMessageListenerContainer redisContainer(
+            @Qualifier("pubSubConnectionFactory") RedisConnectionFactory connectionFactory,
+            CacheInvalidationSubscriber subscriber) {
+        RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+        container.setConnectionFactory(connectionFactory);
+        container.addMessageListener(subscriber, new PatternTopic("cache:invalidate"));
+        return container;
     }
 }
