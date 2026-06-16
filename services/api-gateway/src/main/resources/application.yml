@@ -1,0 +1,56 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: order-service-api-docs
+          uri: http://localhost:8081
+          predicates:
+            - Path=/v3/api-docs/order-service
+          filters:
+            - RewritePath=/v3/api-docs/order-service, /v3/api-docs
+
+        - id: loyalty-service-api-docs
+          uri: http://localhost:8082
+          predicates:
+            - Path=/v3/api-docs/loyalty-service
+          filters:
+            - RewritePath=/v3/api-docs/loyalty-service, /v3/api-docs
+
+        - id: order-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/orders/**
+
+        - id: loyalty-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/loyalty/**
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    urls:
+      - name: "Order Service"
+        url: /v3/api-docs/order-service
+      - name: "Loyalty Service"
+        url: /v3/api-docs/loyalty-service
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    prometheus:
+      enabled: true
+    metrics:
+      export:
+        prometheus:
+          enabled: true

@@ -26,7 +26,7 @@ public class TenantFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
 
         String uri = request.getRequestURI();
-        if (uri.startsWith("/swagger-ui") || uri.startsWith("/api-docs")) {
+        if (uri.startsWith("/swagger-ui") || uri.startsWith("/api-docs") || uri.startsWith("/v3/api-docs")) {
             filterChain.doFilter(request, response);
             return;
         }
