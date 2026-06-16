@@ -54,6 +54,7 @@ services:
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
 
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 3
@@ -79,6 +80,7 @@ services:
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
 
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 3
@@ -104,6 +106,7 @@ services:
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
 
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 3
@@ -114,6 +117,18 @@ services:
       - 19094:9094
     networks:
       - resto-network
+
+  kafka-init:
+    image: apache/kafka:3.7.0
+    container_name: resto-kafka-init
+    depends_on:
+      - kafka-1
+      - kafka-2
+      - kafka-3
+    command: [ "/bin/sh", "-c", "sleep 15 && /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --topic orders --bootstrap-server resto-kafka-1:9092 --partitions 9 --replication-factor 3 && echo 'Topic created' && /opt/kafka/bin/kafka-topics.sh --describe --topic orders --bootstrap-server resto-kafka-1:9092" ]
+    networks:
+      - resto-network
+    restart: "no"
 
   postgres:
     image: postgres:16-alpine
