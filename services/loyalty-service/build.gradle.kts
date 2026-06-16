@@ -17,6 +17,8 @@ repositories {
     mavenCentral()
 }
 
+val openapiVersion = "2.6.0"
+
 dependencies {
     implementation(project(":services:shared"))
 
@@ -25,6 +27,9 @@ dependencies {
     implementation("org.springframework.kafka:spring-kafka")
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+    implementation("io.micrometer:micrometer-registry-prometheus")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:${openapiVersion}")
 
     runtimeOnly("org.postgresql:postgresql")
 

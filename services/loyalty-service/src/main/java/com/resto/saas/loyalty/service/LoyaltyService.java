@@ -26,7 +26,7 @@ public class LoyaltyService {
         String tenantId = TenantContext.getTenant();
         return (LoyaltyAccountDto) repository.findByTenantIdAndCustomerName(tenantId, customerName)
                 .map(this::toDto)
-                .orElse(new LoyaltyAccountDto(UUID.randomUUID(),tenantId,customerName, 0));
+                .orElse(new LoyaltyAccountDto(null, tenantId, customerName, 0));
     }
 
     @Transactional

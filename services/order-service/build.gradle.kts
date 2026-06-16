@@ -4,6 +4,7 @@ plugins {
 }
 
 val kafkaVersion = "3.7.0"
+val openapiVersion = "2.6.0"
 
 dependencies {
     implementation(project(":services:shared"))
@@ -16,6 +17,8 @@ dependencies {
     implementation("org.apache.kafka:kafka_2.13:$kafkaVersion")
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+    implementation("io.micrometer:micrometer-registry-prometheus")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:$openapiVersion")
 
     runtimeOnly("org.postgresql:postgresql")
 }

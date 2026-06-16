@@ -6,6 +6,6 @@ public record LoyaltyAccountDto(
         UUID id,
         String tenantId,
         String customerName,
-        Integer points
+        int points
 ) {
 }
