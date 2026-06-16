@@ -25,6 +25,12 @@ public class TenantFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
+        String uri = request.getRequestURI();
+        if (uri.startsWith("/swagger-ui") || uri.startsWith("/api-docs")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String tenantId = request.getHeader(TENANT_HEADER);
         log.info(">>> TenantFilter: received tenantId = '{}'", tenantId);
 

@@ -66,6 +66,13 @@ management:
             server:
               requests: true
 
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
 logging:
   level:
     com.resto.saas: DEBUG
