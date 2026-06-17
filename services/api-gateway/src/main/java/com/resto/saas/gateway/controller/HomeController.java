@@ -2,12 +2,14 @@ package com.resto.saas.gateway.controller;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Mono;
 
 @RestController
 public class HomeController {
 
     @GetMapping("/")
-    public String health() {
-        return "Resto SaaS API Gateway OK";
+    public Mono<String> health() {
+
+        return Mono.just("Resto SaaS API Gateway OK");
     }
 }

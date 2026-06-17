@@ -34,6 +34,7 @@ public class OrderService {
     @Transactional(readOnly = true)
     public List<OrderResponse> getAllOrders() {
 
+//        throw new RuntimeException("Simulated DB failure"); // TODO: временная проверка, потом удалить
         return orderRepository.findAllByOrderByCreatedAtDesc()
             .stream()
             .map(OrderResponse::fromEntity)

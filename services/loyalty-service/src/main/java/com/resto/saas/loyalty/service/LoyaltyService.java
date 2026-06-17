@@ -5,6 +5,7 @@ import com.resto.saas.loyalty.entity.LoyaltyAccount;
 import com.resto.saas.loyalty.event.OrderCreatedEvent;
 import com.resto.saas.loyalty.repository.LoyaltyAccountRepository;
 import com.resto.saas.shared.tenant.TenantContext;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -12,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -21,8 +21,10 @@ public class LoyaltyService {
 
     private final LoyaltyAccountRepository repository;
 
+    @CircuitBreaker(name = "getBalance", fallbackMethod = "getBalanceFallback")
     @Transactional(readOnly = true)
     public LoyaltyAccountDto getBalance(String customerName) {
+//        throw new RuntimeException("Simulated DB failure"); // TODO: временная проверка, потом удалить
         String tenantId = TenantContext.getTenant();
         return (LoyaltyAccountDto) repository.findByTenantIdAndCustomerName(tenantId, customerName)
                 .map(this::toDto)
@@ -77,5 +79,11 @@ public class LoyaltyService {
                 account.getCustomerName(),
                 account.getPoints()
         );
+    }
+
+    public LoyaltyAccountDto getBalanceFallback(String customerName, Exception ex) {
+
+        log.warn("Fallback for getBalance: customer={}, error={}", customerName, ex.getMessage());
+        return new LoyaltyAccountDto(null, null, customerName, 0);
     }
 }

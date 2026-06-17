@@ -30,6 +30,13 @@ spring:
     username: resto_app
     password: app_secret
     driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 2000
+      validation-timeout: 1000
+      max-lifetime: 30000
+      idle-timeout: 10000
+      minimum-idle: 2
+      maximum-pool-size: 10
 
   jpa:
     hibernate:
@@ -49,15 +56,41 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
+resilience4j:
+  circuitbreaker:
+    instances:
+      getAllOrders:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        minimumNumberOfCalls: 5
+        waitDurationInOpenState: 10s
+      getOrder:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        minimumNumberOfCalls: 5
+        waitDurationInOpenState: 10s
+      createOrder:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        minimumNumberOfCalls: 5
+        waitDurationInOpenState: 10s
+      updateStatus:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        minimumNumberOfCalls: 5
+        waitDurationInOpenState: 10s
+
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: health,info,metrics,prometheus,circuitbreakers
   endpoint:
     health:
       show-details: always
     prometheus:
+      enabled: true
+    circuitbreakers:
       enabled: true
     metrics:
       export:

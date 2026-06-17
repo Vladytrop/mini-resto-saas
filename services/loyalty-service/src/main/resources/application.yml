@@ -10,6 +10,13 @@ spring:
     username: resto_app
     password: app_secret
     driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 2000
+      validation-timeout: 1000
+      max-lifetime: 5000
+      idle-timeout: 3000
+      minimum-idle: 1
+      maximum-pool-size: 3
 
   jpa:
     hibernate:
@@ -46,16 +53,28 @@ spring:
         dlt-topic-suffix: .dlt
         auto-create-topic: true
 
+resilience4j:
+  circuitbreaker:
+    instances:
+      getBalance:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: health,info,metrics,prometheus,circuitbreakers
   endpoint:
     health:
      show-details: always
   prometheus:
-      enabled: true
+    enabled: true
+  circuitbreakers:
+    enabled: true
   metrics:
      export:
         prometheus:
