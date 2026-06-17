@@ -41,13 +41,13 @@ jobs:
       - name: Build and push Docker images
         if: github.ref == 'refs/heads/main'
         run: |
-          docker build -t vladytrop//resto-order-service:latest ./services/order-service
-          docker build -t vladytrop//resto-loyalty-service:latest ./services/loyalty-service
-          docker build -t vladytrop//resto-api-gateway:latest ./services/api-gateway
+          docker build -t vladytrop/resto-order-service:latest ./services/order-service
+          docker build -t vladytrop/resto-loyalty-service:latest ./services/loyalty-service
+          docker build -t vladytrop/resto-api-gateway:latest ./services/api-gateway
           
-          docker push vladytrop//resto-order-service:latest
-          docker push vladytrop//resto-loyalty-service:latest
-          docker push vladytrop//resto-api-gateway:latest
+          docker push vladytrop/resto-order-service:latest
+          docker push vladytrop/resto-loyalty-service:latest
+          docker push vladytrop/resto-api-gateway:latest
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
