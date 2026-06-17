@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: loyalty-service
-          image: resto/loyalty-service:latest # сборка через CI/CD
+          image: vladytrop/resto/loyalty-service:latest # сборка через CI/CD
           ports:
             - containerPort: 8082
           env:

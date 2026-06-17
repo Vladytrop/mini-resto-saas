@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: api-gateway
-          image: resto/api-gateway:latest # сборка через CI/CD
+          image: vladytrop/resto/api-gateway:latest # сборка через CI/CD
           ports:
             - containerPort: 8080
           env:
