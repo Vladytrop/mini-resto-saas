@@ -8,7 +8,6 @@ import com.resto.saas.loyalty.repository.LoyaltyAccountRepository;
 import com.resto.saas.shared.event.OrderCreatedEvent;
 import com.resto.saas.shared.event.PaymentProcessedEvent;
 import com.resto.saas.shared.tenant.TenantContext;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -26,9 +25,8 @@ public class LoyaltyService {
 
     private final LoyaltyAccountRepository repository;
 
-    @CircuitBreaker(name = "getBalance", fallbackMethod = "getBalanceFallback")
     @Transactional(readOnly = true)
-    public LoyaltyAccountDto getBalance(String customerName) {
+    public LoyaltyAccountDto getBalanceInternal(String customerName) {
 //        throw new RuntimeException("Simulated DB failure"); // TODO: временная проверка, потом удалить
         String tenantId = TenantContext.getTenant();
         return (LoyaltyAccountDto) repository.findByTenantIdAndCustomerName(tenantId, customerName)
@@ -125,11 +123,5 @@ public class LoyaltyService {
                 account.getCustomerName(),
                 account.getPoints()
         );
-    }
-
-    public LoyaltyAccountDto getBalanceFallback(String customerName, Exception ex) {
-
-        log.warn("Fallback for getBalance: customer={}, error={}", customerName, ex.getMessage());
-        return new LoyaltyAccountDto(null, null, customerName, 0);
     }
 }

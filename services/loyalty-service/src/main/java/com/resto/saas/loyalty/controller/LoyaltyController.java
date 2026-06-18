@@ -1,6 +1,7 @@
 package com.resto.saas.loyalty.controller;
 
 import com.resto.saas.loyalty.dto.LoyaltyAccountDto;
+import com.resto.saas.loyalty.service.LoyaltyCircuitBreakerService;
 import com.resto.saas.loyalty.service.LoyaltyService;
 import com.resto.saas.shared.dto.ApiResponse;
 import com.resto.saas.shared.tenant.TenantContext;
@@ -14,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class LoyaltyController {
 
-    private final LoyaltyService loyaltyService;
+    private final LoyaltyCircuitBreakerService loyaltyCircuitBreakerService;
 
     @GetMapping("/{customerName}")
     public ApiResponse<LoyaltyAccountDto> getBalance(
@@ -24,7 +25,7 @@ public class LoyaltyController {
         TenantContext.setTenant(tenantId);
         try {
             log.info("Запрос баллов для customer={}, tenant={}", customerName, tenantId);
-            return ApiResponse.ok(loyaltyService.getBalance(customerName));
+            return ApiResponse.ok(loyaltyCircuitBreakerService.getBalance(customerName));
         } finally {
             TenantContext.clear();
         }
