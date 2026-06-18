@@ -125,7 +125,7 @@ services:
       - kafka-1
       - kafka-2
       - kafka-3
-    command: [ "/bin/sh", "-c", "sleep 15 && /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --topic orders --bootstrap-server resto-kafka-1:9092 --partitions 9 --replication-factor 3 && echo 'Topic created' && /opt/kafka/bin/kafka-topics.sh --describe --topic orders --bootstrap-server resto-kafka-1:9092" ]
+    command: [ "/bin/sh", "-c", "sleep 15 && /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --topic orders --bootstrap-server resto-kafka-1:9092 --partitions 9 --replication-factor 3 && /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --topic payments --bootstrap-server resto-kafka-1:9092 --partitions 9 --replication-factor 3 && echo 'Topics created' && /opt/kafka/bin/kafka-topics.sh --describe --topic orders --bootstrap-server resto-kafka-1:9092 && /opt/kafka/bin/kafka-topics.sh --describe --topic payments --bootstrap-server resto-kafka-1:9092" ]
     networks:
       - resto-network
     restart: "no"

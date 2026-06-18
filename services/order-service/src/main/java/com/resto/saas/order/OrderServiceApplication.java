@@ -12,6 +12,7 @@ import org.springframework.context.annotation.ComponentScan;
 @ComponentScan(basePackages = {"com.resto.saas.order", "com.resto.saas.shared"})
 @EntityScan(basePackages = "com.resto.saas.order.entity")
 public class OrderServiceApplication {
+
     public static void main(String[] args) {
         SpringApplication.run(OrderServiceApplication.class, args);
     }

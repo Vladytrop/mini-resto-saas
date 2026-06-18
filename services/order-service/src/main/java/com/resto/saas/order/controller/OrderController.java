@@ -22,15 +22,17 @@ public class OrderController {
 
     private final OrderService orderService;
 
-    @GetMapping
     @CircuitBreaker(name = "getAllOrders", fallbackMethod = "getAllOrdersFallback")
+    @GetMapping
     public ResponseEntity<ApiResponse<List<OrderResponse>>> getAllOrders() {
+
         return ResponseEntity.ok(ApiResponse.ok(orderService.getAllOrders()));
     }
 
     @CircuitBreaker(name = "getOrder", fallbackMethod = "getOrderFallback")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<OrderResponse>> getOrder(@PathVariable UUID id) {
+
         return ResponseEntity.ok(ApiResponse.ok(orderService.getOrder(id)));
     }
 
@@ -38,6 +40,7 @@ public class OrderController {
     @PostMapping
     public ResponseEntity<ApiResponse<OrderResponse>> createOrder(
             @Valid @RequestBody CreateOrderRequest request) {
+
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(ApiResponse.ok(orderService.createOrder(request)));
     }
@@ -47,6 +50,7 @@ public class OrderController {
     public ResponseEntity<ApiResponse<OrderResponse>> updateStatus(
             @PathVariable UUID id,
             @RequestParam Order.OrderStatus status) {
+
         return ResponseEntity.ok(ApiResponse.ok(orderService.updateStatus(id, status)));
     }
 

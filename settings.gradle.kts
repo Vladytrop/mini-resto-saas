@@ -4,5 +4,6 @@ include(
     "services:shared",
     "services:order-service",
     "services:loyalty-service",
-    "services:api-gateway"
+    "services:api-gateway",
+    "services:payment-service"
 )

@@ -1,0 +1,84 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: payment-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/resto_saas
+    username: resto_app
+    password: app_secret
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 2000
+      validation-timeout: 1000
+      max-lifetime: 5000
+      idle-timeout: 3000
+      minimum-idle: 1
+      maximum-pool-size: 10
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  kafka:
+    bootstrap-servers: localhost:19092,localhost:19093,localhost:19094
+    producer:
+      acks: all
+      retries: 3
+      enable-idempotence: true
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      stripe:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+      yookassa:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,circuitbreakers
+  endpoint:
+    health:
+      show-details: always
+    prometheus:
+      enabled: true
+    circuitbreakers:
+      enabled: true
+    metrics:
+      export:
+        prometheus:
+          enabled: true
+      distribution:
+        percentiles-histogram:
+          http:
+            server:
+              requests: true
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+logging:
+  level:
+    com.resto.saas: DEBUG

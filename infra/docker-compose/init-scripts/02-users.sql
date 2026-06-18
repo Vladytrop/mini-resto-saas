@@ -1,4 +1,11 @@
-CREATE USER resto_app WITH PASSWORD 'app_secret';
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'resto_app') THEN
+        CREATE USER resto_app WITH PASSWORD 'app_secret';
+END IF;
+END
+$$;
+
 GRANT CONNECT ON DATABASE resto_saas TO resto_app;
 GRANT USAGE ON SCHEMA public TO resto_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO resto_app;
