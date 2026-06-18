@@ -1,6 +1,7 @@
 package com.resto.saas.payment.service;
 
 import com.resto.saas.payment.dto.CreatePaymentRequest;
+import com.resto.saas.payment.dto.PaymentResult;
 import com.resto.saas.shared.event.PaymentProcessedEvent;
 import com.resto.saas.payment.entity.Payment;
 import com.resto.saas.payment.entity.PaymentStatus;
@@ -59,8 +60,17 @@ public class PaymentService {
                 .idempotencyKey(request.getIdempotencyKey())
                 .build();
 
-        var result = paymentCircuitBreakerService
-                .charge(provider, request.getIdempotencyKey(), request.getAmount());
+        PaymentResult result;
+        switch (provider.getCode()) {
+            case "stripe"   -> result = paymentCircuitBreakerService
+                    .chargeStripe(provider, request.getIdempotencyKey(), request.getAmount());
+
+            case "yookassa" -> result = paymentCircuitBreakerService
+                    .chargeYookassa(provider, request.getIdempotencyKey(), request.getAmount());
+
+            default ->
+                    throw new IllegalArgumentException("Unknown provider: " + provider.getCode());
+        }
 
         if (result.isSuccess()) {
             payment.setStatus(PaymentStatus.SUCCESS);
