@@ -28,15 +28,23 @@ jobs:
       - name: Run tests
         run: ./gradlew test
 
+      - name: Debug Docker secrets
+        run: |
+          echo "Username: ${{ secrets.DOCKER_USERNAME }}"
+          echo "Token starts with: $(echo ${{ secrets.DOCKER_PASSWORD }} | cut -c1-10)"
+        shell: bash
+
       - name: Build and push Docker images
         if: github.ref == 'refs/heads/main'
         run: |
           docker build -t ${{ secrets.DOCKER_USERNAME }}/resto-order-service:latest ./services/order-service
           docker build -t ${{ secrets.DOCKER_USERNAME }}/resto-loyalty-service:latest ./services/loyalty-service
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/resto-payment-service:latest ./services/payment-service
           docker build -t ${{ secrets.DOCKER_USERNAME }}/resto-api-gateway:latest ./services/api-gateway
           
           docker push ${{ secrets.DOCKER_USERNAME }}/resto-order-service:latest
           docker push ${{ secrets.DOCKER_USERNAME }}/resto-loyalty-service:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/resto-payment-service:latest
           docker push ${{ secrets.DOCKER_USERNAME }}/resto-api-gateway:latest
 
       - name: Upload build artifacts
@@ -74,6 +82,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+          logout: 'true'
 
       - name: Build and push Docker image
         run: |
