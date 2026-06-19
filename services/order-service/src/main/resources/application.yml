@@ -37,15 +37,18 @@ spring:
       idle-timeout: 10000
       minimum-idle: 2
       maximum-pool-size: 10
-
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: validate
     show-sql: true
     properties:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    schemas: public
 
   kafka:
     bootstrap-servers: localhost:19092,localhost:19093,localhost:19094

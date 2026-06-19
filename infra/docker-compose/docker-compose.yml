@@ -134,14 +134,13 @@ services:
     image: postgres:16-alpine
     container_name: resto-postgres
     environment:
-      POSTGRES_USER: resto_admin
-      POSTGRES_PASSWORD: resto_secret
       POSTGRES_DB: resto_saas
-    ports:
-      - 5432:5432
+      POSTGRES_USER: resto_app
+      POSTGRES_PASSWORD: app_secret
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init-scripts:/docker-entrypoint-initdb.d
+    ports:
+      - 5432:5432
     networks:
       - resto-network
     healthcheck:

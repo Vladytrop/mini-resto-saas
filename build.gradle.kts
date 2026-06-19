@@ -14,6 +14,8 @@ java {
 }
 
 val springBootVersion = "3.4.0"
+val flywayVersion = "10.15.0"
+val lombokVersion = "1.18.36"
 
 allprojects {
     repositories {
@@ -27,9 +29,12 @@ subprojects {
 
     dependencies {
         implementation(platform("org.springframework.boot:spring-boot-dependencies:$springBootVersion"))
-        compileOnly("org.projectlombok:lombok:1.18.36")
-        annotationProcessor("org.projectlombok:lombok:1.18.36")
+        compileOnly("org.projectlombok:lombok:$lombokVersion")
+        annotationProcessor("org.projectlombok:lombok:$lombokVersion")
         testImplementation("org.springframework.boot:spring-boot-starter-test")
+
+        implementation("org.flywaydb:flyway-core:$flywayVersion")
+        runtimeOnly("org.flywaydb:flyway-database-postgresql:$flywayVersion")
     }
 
     tasks.withType<Test> {
