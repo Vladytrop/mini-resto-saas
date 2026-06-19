@@ -1,0 +1,30 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: analytics-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/analytics
+    username: resto_app
+    password: app_secret
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    schemas: public
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    prometheus:
+      enabled: true
+    metrics:
+      tags:
+        application: ${spring.application.name}

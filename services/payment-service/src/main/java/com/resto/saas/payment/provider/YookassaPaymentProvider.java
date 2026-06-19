@@ -21,7 +21,7 @@ public class YookassaPaymentProvider implements PaymentProvider {
     @Override
     public PaymentResult charge(String idempotencyKey, BigDecimal amount) {
 
-//        throw new RuntimeException("Simulated failure for Stripe"); // TODO проверка Circuit Breaker, потом удалить
+//        throw new RuntimeException("Simulated failure for Yookassa"); // TODO проверка Circuit Breaker, потом удалить
         try {
             Thread.sleep(350);
         } catch (InterruptedException e) {
