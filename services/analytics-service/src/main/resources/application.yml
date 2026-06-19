@@ -5,13 +5,18 @@ spring:
   application:
     name: analytics-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/analytics
+    url: jdbc:postgresql://localhost:5432/resto_saas
     username: resto_app
     password: app_secret
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: validate
     show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
   flyway:
     enabled: true
     baseline-on-migrate: true

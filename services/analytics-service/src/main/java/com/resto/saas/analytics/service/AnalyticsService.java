@@ -22,10 +22,10 @@ public class AnalyticsService {
 
         String sql = """
                 select tenant_id, customer_name, points,
-                    row number() over (order by points desc) as rank
+                    row_number() over (order by points desc) as rank
                 from loyalty_accounts
                 order by points desc
-                lomit 10
+                limit 10
                 """;
 
         @SuppressWarnings("unchecked")
