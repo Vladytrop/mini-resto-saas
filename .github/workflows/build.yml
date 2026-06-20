@@ -45,7 +45,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     strategy:
       matrix:
-        service: [order-service, loyalty-service, payment-service, api-gateway]
+        service: [order-service, loyalty-service, payment-service, api-gateway, analytics-service]
     steps:
       - uses: actions/checkout@v4
 
@@ -105,6 +105,10 @@ jobs:
           kubectl set image deployment/api-gateway \
             api-gateway=${{ env.REGISTRY }}/resto-api-gateway:${{ github.sha }} -n resto-saas
 
+          kubectl set image deployment/analytics-service \
+            analytics-service=${{ env.REGISTRY }}/resto-analytics-service:${{ github.sha }} -n resto-saas
+
           kubectl rollout status deployment/order-service -n resto-saas
           kubectl rollout status deployment/loyalty-service -n resto-saas
+          kubectl rollout status deployment/analytics-service -n resto-saas
           kubectl rollout status deployment/api-gateway -n resto-saas
