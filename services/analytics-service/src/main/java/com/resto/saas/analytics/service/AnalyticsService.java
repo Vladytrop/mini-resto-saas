@@ -36,8 +36,8 @@ public class AnalyticsService {
                 .map(row -> CustomerDto.builder()
                         .tenantId((String) row[0])
                         .customerName((String) row[1])
-                        .totalPoints((Integer) row[2])
-                        .rank((Integer) row[3])
+                        .totalPoints(((Number) row[2]).longValue())
+                        .rank(((Number) row[3]).longValue())
                         .build())
                 .collect(Collectors.toList());
     }
@@ -58,7 +58,7 @@ public class AnalyticsService {
                 .map(row -> RevenueDto.builder()
                         .tenantId((String) row[0])
                         .totalRevenue((BigDecimal) row[1])
-                        .orderCount((Long) row[2])
+                        .orderCount(((Number) row[2]).longValue())
                         .build())
                 .collect(Collectors.toList());
     }

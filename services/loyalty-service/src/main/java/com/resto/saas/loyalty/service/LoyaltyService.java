@@ -10,6 +10,8 @@ import com.resto.saas.shared.event.PaymentProcessedEvent;
 import com.resto.saas.shared.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +27,8 @@ public class LoyaltyService {
 
     private final LoyaltyAccountRepository repository;
 
+    @Cacheable(value = "loyalty",
+            key = "T(com.resto.saas.shared.tenant.TenantContext).getTenant() + ':' + #customerName")
     @Transactional(readOnly = true)
     public LoyaltyAccountDto getBalanceInternal(String customerName) {
 //        throw new RuntimeException("Simulated DB failure"); // TODO: временная проверка, потом удалить
@@ -34,6 +38,8 @@ public class LoyaltyService {
                 .orElse(new LoyaltyAccountDto(null, tenantId, customerName, 0));
     }
 
+    @CacheEvict(value = "loyalty",
+            key = "T(com.resto.saas.shared.tenant.TenantContext).getTenant() + ':' + #event.customerName")
     @Transactional
     public void processOrderCreated(OrderCreatedEvent event) {
 

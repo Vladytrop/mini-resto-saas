@@ -25,13 +25,23 @@ spring:
           predicates:
             - Path=/api/orders/**
           filters:
-            - StripPrefix=1
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 100
+                redis-rate-limiter.burstCapacity: 200
+                redis-rate-limiter.requestedTokens: 1
+                key-resolver: "#{@tenantKeyResolver}"
         - id: loyalty-service
           uri: http://loyalty-service:8082
           predicates:
             - Path=/api/loyalty/**
           filters:
-            - StripPrefix=1
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 200
+                redis-rate-limiter.burstCapacity: 400
+                redis-rate-limiter.requestedTokens: 1
+                key-resolver: "#{@tenantKeyResolver}"
         - id: payment-service
           uri: http://payment-service:8083
           predicates:
@@ -42,8 +52,6 @@ spring:
           uri: http://analytics-service:8084
           predicates:
             - Path=/api/analytics/**
-          filters:
-            - StripPrefix=1
 
 springdoc:
   api-docs:

@@ -29,8 +29,8 @@ public class OrderService {
     private final KafkaTemplate<String, OrderCreatedEvent> kafkaTemplate;
     private final CacheInvalidationPublisher cacheInvalidationPublisher;
 
-    @Cacheable(value = "orders",
-            key = "T(com.resto.saas.shared.tenant.TenantContext).getTenant() + ':list'")
+//    @Cacheable(value = "orders",
+//            key = "T(com.resto.saas.shared.tenant.TenantContext).getTenant() + ':list'")
     @Transactional(readOnly = true)
     public List<OrderResponse> getAllOrders() {
 
@@ -52,7 +52,7 @@ public class OrderService {
     }
 
     @CacheEvict(value = "orders",
-            key = "T(com.resto.saas.shared.tenant.TenantContext).getTenant() + ':list'")
+            key = "T(com.resto.saas.shared.tenant.TenantContext).getTenant() + ':list'", allEntries = true)
     @Transactional
     public OrderResponse createOrder(CreateOrderRequest request) {
 

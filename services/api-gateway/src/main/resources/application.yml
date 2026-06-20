@@ -47,10 +47,14 @@ spring:
           uri: http://payment-service:8083
           predicates:
             - Path=/api/payments/**
+          filters:
+            - StripPrefix=1
         - id: analytics-service
           uri: http://analytics-service:8084
           predicates:
             - Path=/api/analytics/**
+          filters:
+            - StripPrefix=1
 
 management:
   endpoints:

@@ -9,6 +9,6 @@ public class CustomerDto {
 
     private String tenantId;
     private String customerName;
-    private Integer totalPoints;
-    private Integer rank;
+    private Long totalPoints;
+    private Long rank;
 }
