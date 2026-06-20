@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: swagger-ui
+  namespace: resto-saas
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: swagger-ui
+  template:
+    metadata:
+      labels:
+        app: swagger-ui
+    spec:
+      containers:
+        - name: swagger-ui
+          image: swaggerapi/swagger-ui:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: URLS
+              value: '[{"name":"Order Service","url":"http://localhost:8080/v3/api-docs/order-service"},{"name":"Loyalty Service","url":"http://localhost:8080/v3/api-docs/loyalty-service"}]'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: swagger-ui
+  namespace: resto-saas
+spec:
+  selector:
+    app: swagger-ui
+  ports:
+    - port: 8081
+      targetPort: 8080

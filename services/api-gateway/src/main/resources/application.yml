@@ -1,92 +1,64 @@
 server:
   port: 8080
+  netty:
+    max-initial-line-length: 65536
+    max-header-size: 65536
 
 spring:
   application:
     name: api-gateway
   data:
     redis:
-      host: localhost
+      host: redis
       port: 6379
-      password: resto_redis_pass
+      password: ""
   cloud:
     gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
       routes:
-        # API Docs
         - id: order-service-api-docs
-          uri: http://localhost:8081
+          uri: http://order-service:8081
           predicates:
             - Path=/v3/api-docs/order-service
           filters:
             - RewritePath=/v3/api-docs/order-service, /v3/api-docs
-
         - id: loyalty-service-api-docs
-          uri: http://localhost:8082
+          uri: http://loyalty-service:8082
           predicates:
             - Path=/v3/api-docs/loyalty-service
           filters:
             - RewritePath=/v3/api-docs/loyalty-service, /v3/api-docs
-
-        # Services with Rate Limiting
         - id: order-service
-          uri: http://localhost:8081
+          uri: http://order-service:8081
           predicates:
             - Path=/api/orders/**
-          filters:
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 100
-                redis-rate-limiter.burstCapacity: 200
-                key-resolver: "#{@tenantKeyResolver}"
-
         - id: loyalty-service
-          uri: http://localhost:8082
+          uri: http://loyalty-service:8082
           predicates:
             - Path=/api/loyalty/**
-          filters:
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 100
-                redis-rate-limiter.burstCapacity: 200
-                key-resolver: "#{@tenantKeyResolver}"
-
         - id: payment-service
-          uri: http://localhost:8083
+          uri: http://payment-service:8083
           predicates:
             - Path=/api/payments/**
-          filters:
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 100
-                redis-rate-limiter.burstCapacity: 200
-                key-resolver: "#{@tenantKeyResolver}"
-
-      default-filters:
-        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
-
-springdoc:
-  api-docs:
-    enabled: true
-    path: /v3/api-docs
-  swagger-ui:
-    enabled: true
-    urls:
-      - name: "Order Service"
-        url: /v3/api-docs/order-service
-      - name: "Loyalty Service"
-        url: /v3/api-docs/loyalty-service
+        - id: analytics-service
+          uri: http://analytics-service:8084
+          predicates:
+            - Path=/api/analytics/**
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: health,info,metrics,prometheus,gateway
   endpoint:
     health:
       show-details: always
-    prometheus:
+    gateway:
       enabled: true
-    metrics:
-      export:
-        prometheus:
-          enabled: true
