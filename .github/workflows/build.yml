@@ -79,48 +79,36 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  deploy-to-k8s:
-    runs-on: ubuntu-latest
-    needs: docker-build-push
-    if: github.ref == 'refs/heads/main' && env.HAS_KUBECONFIG == 'true'
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Check KUBECONFIG secret
-        id: check
-        run: |
-          if [ -z "${{ secrets.KUBECONFIG }}" ]; then
-            echo "HAS_KUBECONFIG=false" >> $GITHUB_ENV
-            echo ">>> KUBECONFIG не настроен. Deploy пропущен. <<<"
-            exit 0
-          fi
-          echo "HAS_KUBECONFIG=true" >> $GITHUB_ENV
-
-      - name: Setup kubectl
-        if: env.HAS_KUBECONFIG == 'true'
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'v1.30.0'
-
-      - name: Deploy to Kubernetes
-        if: env.HAS_KUBECONFIG == 'true'
-        run: |
-          echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig
-          export KUBECONFIG=kubeconfig
-
-          kubectl set image deployment/order-service \
-            order-service=${{ env.REGISTRY }}/resto-order-service:${{ github.sha }} -n resto-saas
-          kubectl set image deployment/loyalty-service \
-            loyalty-service=${{ env.REGISTRY }}/resto-loyalty-service:${{ github.sha }} -n resto-saas
-          kubectl set image deployment/payment-service \
-            payment-service=${{ env.REGISTRY }}/resto-payment-service:${{ github.sha }} -n resto-saas
-          kubectl set image deployment/api-gateway \
-            api-gateway=${{ env.REGISTRY }}/resto-api-gateway:${{ github.sha }} -n resto-saas
-
-          kubectl set image deployment/analytics-service \
-            analytics-service=${{ env.REGISTRY }}/resto-analytics-service:${{ github.sha }} -n resto-saas
-
-          kubectl rollout status deployment/order-service -n resto-saas
-          kubectl rollout status deployment/loyalty-service -n resto-saas
-          kubectl rollout status deployment/analytics-service -n resto-saas
-          kubectl rollout status deployment/api-gateway -n resto-saas
+#  deploy-to-k8s:
+#    runs-on: ubuntu-latest
+#    needs: docker-build-push
+#    if: github.ref == 'refs/heads/main'
+#    steps:
+#      - uses: actions/checkout@v4
+#
+#      - name: Setup kubectl
+#        uses: azure/setup-kubectl@v3
+#        with:
+#          version: 'v1.30.0'
+#
+#      - name: Deploy to Kubernetes
+#        run: |
+#          echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig
+#          export KUBECONFIG=kubeconfig
+#
+#          kubectl set image deployment/order-service \
+#            order-service=${{ env.REGISTRY }}/resto-order-service:${{ github.sha }} -n resto-saas
+#          kubectl set image deployment/loyalty-service \
+#            loyalty-service=${{ env.REGISTRY }}/resto-loyalty-service:${{ github.sha }} -n resto-saas
+#          kubectl set image deployment/payment-service \
+#            payment-service=${{ env.REGISTRY }}/resto-payment-service:${{ github.sha }} -n resto-saas
+#          kubectl set image deployment/api-gateway \
+#            api-gateway=${{ env.REGISTRY }}/resto-api-gateway:${{ github.sha }} -n resto-saas
+#
+#          kubectl set image deployment/analytics-service \
+#            analytics-service=${{ env.REGISTRY }}/resto-analytics-service:${{ github.sha }} -n resto-saas
+#
+#          kubectl rollout status deployment/order-service -n resto-saas
+#          kubectl rollout status deployment/loyalty-service -n resto-saas
+#          kubectl rollout status deployment/analytics-service -n resto-saas
+#          kubectl rollout status deployment/api-gateway -n resto-saas
