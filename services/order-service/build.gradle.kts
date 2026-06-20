@@ -18,6 +18,8 @@ dependencies {
     implementation("org.apache.kafka:kafka_2.13:$kafkaVersion")
 
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    implementation("org.flywaydb:flyway-core")
+    implementation("org.flywaydb:flyway-database-postgresql")
 
     implementation("io.github.resilience4j:resilience4j-spring-boot3:$resilience4jVersion")
 
