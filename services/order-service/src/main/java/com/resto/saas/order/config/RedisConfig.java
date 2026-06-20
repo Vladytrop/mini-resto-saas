@@ -3,8 +3,8 @@ package com.resto.saas.order.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.resto.saas.order.cache.CacheInvalidationSubscriber;
-import io.lettuce.core.ReadFrom;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -14,8 +14,6 @@ import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
-import org.springframework.data.redis.connection.RedisStaticMasterReplicaConfiguration;
-import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.listener.PatternTopic;
@@ -30,19 +28,17 @@ import java.time.Duration;
 @EnableCaching
 public class RedisConfig {
 
-//     Master/Replica для кэширования
+    @Value("${spring.data.redis.host:localhost}")
+    private String redisHost;
+
+    @Value("${spring.data.redis.port:6379}")
+    private int redisPort;
+
     @Bean
     @Primary
     public RedisConnectionFactory redisConnectionFactory() {
-        RedisStaticMasterReplicaConfiguration config =
-                new RedisStaticMasterReplicaConfiguration("localhost", 6379);
-        config.addNode("localhost", 6380);
-
-        LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
-                .readFrom(ReadFrom.REPLICA_PREFERRED)
-                .build();
-
-        return new LettuceConnectionFactory(config, clientConfig);
+        RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(redisHost, redisPort);
+        return new LettuceConnectionFactory(config);
     }
 
     @Bean
@@ -81,10 +77,9 @@ public class RedisConfig {
                 .build();
     }
 
-//     Standalone для Pub/Sub
     @Bean("pubSubConnectionFactory")
     public RedisConnectionFactory pubSubConnectionFactory() {
-        RedisStandaloneConfiguration config = new RedisStandaloneConfiguration("localhost", 6379);
+        RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(redisHost, redisPort);
         return new LettuceConnectionFactory(config);
     }
 

@@ -2,33 +2,21 @@ server:
   port: 8081
 
 spring:
-
   cache:
     type: redis
   data:
     redis:
-      host: localhost
-      port: 6379
-      lettuce:
-        cluster:
-          read-from: replica_preferred
-
-        pool:
-          max-active: 10
-          max-idle: 5
-          min-idle: 2
-
+      host: ${REDIS_SERVER_HOST:localhost}
+      port: ${REDIS_SERVER_PORT:6379}
   session:
     timeout: 30m
     store-type: redis
-
   application:
     name: order-service
-
   datasource:
-    url: jdbc:postgresql://localhost:5432/resto_saas
-    username: resto_app
-    password: app_secret
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/resto_saas}
+    username: ${SPRING_DATASOURCE_USERNAME:resto_app}
+    password: ${SPRING_DATASOURCE_PASSWORD:app_secret}
     driver-class-name: org.postgresql.Driver
     hikari:
       connection-timeout: 2000
@@ -49,9 +37,8 @@ spring:
     enabled: true
     baseline-on-migrate: true
     schemas: public
-
   kafka:
-    bootstrap-servers: localhost:19092,localhost:19093,localhost:19094
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:19092}
     producer:
       acks: all
       retries: 3

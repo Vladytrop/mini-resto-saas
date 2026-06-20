@@ -1,0 +1,31 @@
+spring:
+  data:
+    redis:
+      host: redis
+      port: 6379
+      password: ""
+  cloud:
+    gateway:
+      routes:
+        - id: order-service
+          uri: http://order-service:8081
+          predicates:
+            - Path=/api/orders/**
+        - id: loyalty-service
+          uri: http://loyalty-service:8082
+          predicates:
+            - Path=/api/loyalty/**
+        - id: payment-service
+          uri: http://payment-service:8083
+          predicates:
+            - Path=/api/payments/**
+        - id: analytics-service
+          uri: http://analytics-service:8084
+          predicates:
+            - Path=/api/analytics/**
+        - id: order-service-api-docs
+          uri: http://order-service:8081
+          predicates:
+            - Path=/v3/api-docs/order-service
+          filters:
+            - RewritePath=/v3/api-docs/order-service, /v3/api-docs
