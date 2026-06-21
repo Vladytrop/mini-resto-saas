@@ -41,6 +41,12 @@ spring:
       ack-mode: record
       missing-topics-fatal: false
 
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
 resilience4j:
   circuitbreaker:
     instances:
@@ -58,20 +64,20 @@ management:
         include: health,info,metrics,prometheus,circuitbreakers
   endpoint:
     health:
-     show-details: always
+      show-details: always
   prometheus:
     enabled: true
   circuitbreakers:
     enabled: true
   metrics:
-     export:
-        prometheus:
-         enabled: true
-     distribution:
-        percentiles-histogram:
-          http:
-            server:
-              requests: true
+    export:
+      prometheus:
+        enabled: true
+    distribution:
+      percentiles-histogram:
+        http:
+          server:
+            requests: true
 
 springdoc:
   api-docs:

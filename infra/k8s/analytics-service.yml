@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
         - name: analytics-service
-          image: vladytrop/resto-analytics-service:latest
+          imagePullPolicy: IfNotPresent
+          image: vladytrop/resto-analytics-service:fixed-v1
           ports:
             - containerPort: 8084
           env:

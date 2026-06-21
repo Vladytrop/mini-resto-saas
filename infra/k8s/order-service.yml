@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
         - name: order-service
-          image: vladytrop/resto-order-service:latest  # сборка через CI/CD
+          imagePullPolicy: IfNotPresent
+          image: vladytrop/resto-order-service:flyway-v1  # сборка через CI/CD
           ports:
             - containerPort: 8081
           env:

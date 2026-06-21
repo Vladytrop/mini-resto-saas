@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
         - name: loyalty-service
-          image: vladytrop/resto-loyalty-service:latest # сборка через CI/CD
+          imagePullPolicy: IfNotPresent
+          image: vladytrop/resto-loyalty-service:cache-v1
           ports:
             - containerPort: 8082
           env:
@@ -36,6 +37,21 @@ spec:
                 configMapKeyRef:
                   name: resto-config
                   key: KAFKA_BOOTSTRAP
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: resto-config
+                  key: REDIS_HOST
+            - name: REDIS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: resto-config
+                  key: REDIS_PORT
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: resto-secrets
+                  key: REDIS_PASSWORD
           resources:
             requests:
               memory: "512Mi"

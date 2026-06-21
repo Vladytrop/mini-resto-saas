@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
         - name: api-gateway
-          image: vladytrop/resto-api-gateway:latest # сборка через CI/CD
+          imagePullPolicy: IfNotPresent
+          image: vladytrop/resto-api-gateway:k8s-fix6 # сборка через CI/CD
           ports:
             - containerPort: 8080
           env:

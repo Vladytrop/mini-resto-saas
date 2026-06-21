@@ -15,6 +15,7 @@ spec:
     spec:
       containers:
         - name: payment-service
+          imagePullPolicy: IfNotPresent
           image: vladytrop/resto-payment-service:latest
           ports:
             - containerPort: 8083
