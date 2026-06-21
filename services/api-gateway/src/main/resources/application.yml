@@ -5,6 +5,8 @@ server:
     max-header-size: 65536
 
 spring:
+  profiles:
+    active: k8s
   application:
     name: api-gateway
   data:
@@ -53,8 +55,6 @@ spring:
           uri: http://analytics-service:8084
           predicates:
             - Path=/api/analytics/**
-          filters:
-            - StripPrefix=1
 
 management:
   endpoints:
