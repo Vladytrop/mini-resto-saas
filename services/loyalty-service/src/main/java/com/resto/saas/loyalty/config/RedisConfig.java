@@ -2,11 +2,14 @@ package com.resto.saas.loyalty.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.resto.saas.loyalty.cache.CacheInvalidationSubscriber;
+import com.resto.saas.shared.cache.TwoLevelCacheManager;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -48,8 +51,25 @@ public class RedisConfig {
         return new StringRedisTemplate(connectionFactory);
     }
 
+    /**
+     * Композитный менеджер, сначала ищет в L1 (Caffeine), потом в L2 (Redis)
+     * @Primary - Spring будет использовать этот менеджер по умолчанию для @Cacheable/@CachePut/@CacheEvict
+     */
     @Bean
+    @Primary
     public CacheManager cacheManager(
+            @Qualifier("redisConnectionFactory") RedisConnectionFactory connectionFactory) {
+        return new TwoLevelCacheManager(
+                caffeineCacheManager(),
+                redisCacheManager(connectionFactory));
+    }
+
+    /**
+     * L2 кеш Redis. Общий для всех подов
+     * 10 минут стандарт, 5 минут для orders
+     */
+    @Bean
+    public CacheManager redisCacheManager(
             @Qualifier("redisConnectionFactory") RedisConnectionFactory connectionFactory) {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
@@ -75,6 +95,19 @@ public class RedisConfig {
                 .cacheDefaults(defaultConfig)
                 .withCacheConfiguration("orders", ordersConfig)
                 .build();
+    }
+    /**
+     * L1 кеш Caffeine. Локальный для каждого пода
+     * Короткий ТТЛ (30 сек)
+     */
+    @Bean
+    public CacheManager caffeineCacheManager() {
+        CaffeineCacheManager manager = new CaffeineCacheManager("loyalty", "orders");
+        manager.setCaffeine(Caffeine.newBuilder()
+                .expireAfterWrite(Duration.ofSeconds(30)) // короткий ТТЛ
+                .maximumSize(1000) // лимит памяти на под
+                .recordStats()); // метрики для prometheus
+        return manager;
     }
 
     @Bean("pubSubConnectionFactory")

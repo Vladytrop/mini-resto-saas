@@ -20,6 +20,7 @@ repositories {
 val kafkaVersion = "3.7.0"
 val openapiVersion = "2.6.0"
 val resilience4jVersion = "2.1.0"
+//val caffeineVersion = "3.1.8"
 
 dependencies {
     implementation(project(":services:shared"))
@@ -30,6 +31,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.kafka:spring-kafka")
     implementation("org.apache.kafka:kafka_2.13:$kafkaVersion")
+    implementation("com.github.ben-manes.caffeine:caffeine")
 
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
 

@@ -4,15 +4,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.resto.saas.loyalty.dto.LoyaltyAccountDto;
 import com.resto.saas.loyalty.entity.LoyaltyAccount;
+import com.resto.saas.loyalty.exception.ConcurrencyConflictException;
+import com.resto.saas.loyalty.exception.InsufficientPointsException;
 import com.resto.saas.loyalty.repository.LoyaltyAccountRepository;
 import com.resto.saas.shared.event.OrderCreatedEvent;
 import com.resto.saas.shared.event.PaymentProcessedEvent;
 import com.resto.saas.shared.tenant.TenantContext;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +31,7 @@ import java.util.UUID;
 public class LoyaltyService {
 
     private final LoyaltyAccountRepository repository;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Cacheable(value = "loyalty",
             key = "T(com.resto.saas.shared.tenant.TenantContext).getTenant() + ':' + #customerName")
@@ -129,5 +135,34 @@ public class LoyaltyService {
                 account.getCustomerName(),
                 account.getPoints()
         );
+    }
+
+    /**
+     * Списание баллов
+     * защищено @Version
+     */
+    @CacheEvict(value = "loyalty",
+            key = "T(com.resto.saas.shared.tenant.TenantContext).getTenant() + ':' + #customerName")
+    @Transactional
+    public LoyaltyAccountDto spendPoints(String customerName, int pointsToSpend) {
+        // Читаем акаунт, ищем аккаунт, сохраняем изоляцию
+        LoyaltyAccount account = repository.findByTenantIdAndCustomerName(TenantContext.getTenant(), customerName)
+                .orElseThrow(() -> new EntityNotFoundException("Аккаунт не найден"));
+        // проверяем баланс
+        if (account.getPoints() < pointsToSpend) {
+            throw new InsufficientPointsException(
+                    String.format("Недостаточно баллов. Баланс: %d, запрошено: %d",
+                            account.getPoints(), pointsToSpend));
+        }
+        // Списываем
+        account.setPoints(account.getPoints() - pointsToSpend);
+        // Сохраняем, здесь @Version проверка
+        try {
+            LoyaltyAccount saved = repository.saveAndFlush(account);
+            return LoyaltyAccountDto.fromEntity(saved);
+        } catch (ObjectOptimisticLockingFailureException e) {
+            log.warn("Optimistic lock conflict for customer={}, tenant={}", customerName, TenantContext.getTenant());
+            throw new ConcurrencyConflictException("Баланс был изменен другим запросом. Попробуйте снова.");
+        }
     }
 }

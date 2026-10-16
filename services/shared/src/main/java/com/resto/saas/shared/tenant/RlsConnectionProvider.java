@@ -44,18 +44,27 @@ public class RlsConnectionProvider implements MultiTenantConnectionProvider<Stri
         connection.close();
     }
 
+    /**
+     * устанавливает тенант для текущей транзакции
+     * третий параметр true означает, что set local
+     * переменная живет только внутри транзакции и автоматически сбрасывается
+     * предотвращает утечку данных в пул соединения
+     */
     private void setTenant(Connection connection, String tenantIdentifier) throws SQLException {
         log.info(">>> Setting tenant to: {}", tenantIdentifier);
         try (PreparedStatement ps = connection.prepareStatement(
-                "select set_config('app.current_tenant', ?, false)")) {
+                "select set_config('app.current_tenant', ?, true)")) {
             ps.setString(1, tenantIdentifier);
             ps.execute();
         }
     }
 
+    /**
+     * явный сброс тенант
+     */
     private void resetTenant(Connection connection) throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement(
-                "select set_config('app.current_tenant', '', false)")) {
+                "select set_config('app.current_tenant', '', true)")) {
             ps.execute();
         }
     }

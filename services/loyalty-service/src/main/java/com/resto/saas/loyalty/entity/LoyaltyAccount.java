@@ -29,6 +29,13 @@ public class LoyaltyAccount implements TenantAware {
     @Column(name = "points", nullable = false)
     private Integer points = 0;
 
+    /**
+     * Оптимистичная блокировка для защиты от двойных списаний баллов
+     */
+    @Version
+    @Column(name = "version", nullable = false)
+    private Integer version = 0;
+
     @Override
     public void setTenantId(String tenantId) {
         this.tenantId = tenantId;
