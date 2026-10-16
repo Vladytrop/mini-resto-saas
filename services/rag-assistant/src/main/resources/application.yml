@@ -1,0 +1,73 @@
+server:
+  port: 8085  # Отдельный порт для RAG-сервиса
+
+spring:
+  application:
+    name: rag-assistant
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:rag_db}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 30000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate  # Используем Flyway, не Hibernate DDL
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+  ai:
+    vectorstore:
+      pgvector:
+        index-type: ivfflat
+        distance-type: cosine
+        dimensions: 1024  # Размер вектора bge-m3
+
+# Кастомные настройки для RAG
+rag:
+  retrieval:
+    top-k: 5  # Топ-5 релевантных чанков
+    min-similarity: 0.7  # Порог релевантности (ниже = галлюцинации)
+  cache:
+    ttl-hours: 12  # Кэш частых вопросов на 12 часов
+
+# Resilience4j для LLM
+resilience4j:
+  circuitbreaker:
+    instances:
+      llmApi:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+
+# Actuator для метрик
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, prometheus, metrics
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+# Logging
+logging:
+  level:
+    com.resto.saas.rag: DEBUG
+    org.springframework.ai: INFO

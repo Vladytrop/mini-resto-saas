@@ -6,5 +6,6 @@ include(
     "services:loyalty-service",
     "services:api-gateway",
     "services:payment-service",
-    "services:analytics-service"
+    "services:analytics-service",
+    "services:rag-assistant"
 )

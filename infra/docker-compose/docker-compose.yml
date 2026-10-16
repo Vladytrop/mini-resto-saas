@@ -173,6 +173,24 @@ services:
     networks:
       - resto-network
 
+      # PostgreSQL для RAG (отдельная БД, как заявлено в резюме)
+  rag-postgres:
+    image: pgvector/pgvector:pg16
+    container_name: rag-postgres
+    environment:
+      POSTGRES_DB: rag_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      ports:
+        - "5433:5432"  # Другой порт, чтобы не конфликтовать с основной БД
+      volumes:
+        - rag-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+        test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+        interval: 10s
+        timeout: 5s
+        retries: 5
+
 volumes:
   postgres_data:
   kafka-1-data:
@@ -181,6 +199,7 @@ volumes:
   redis-master-data:
   redis-replica-data:
   grafana_data:
+  rag-postgres-data:
 
 networks:
   resto-network:
