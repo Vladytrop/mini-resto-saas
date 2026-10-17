@@ -34,11 +34,19 @@ spring:
     vectorstore:
       pgvector:
         index-type: ivfflat
-        distance-type: cosine
+        distance-type: COSINE_DISTANCE
         dimensions: 1024  # Размер вектора bge-m3
+        schema-name: public
+        table-name: rag_documents
+        remove-existing-vector-store-table: false
+        initialize-table: false
+        top-k: 5
+        similarity-threshold: 0.7
 
 # Кастомные настройки для RAG
 rag:
+  ingestion:
+    auto-run-on-startup: true # сам прогоняет ETL при старте(в проде выключено = false)
   retrieval:
     top-k: 5  # Топ-5 релевантных чанков
     min-similarity: 0.7  # Порог релевантности (ниже = галлюцинации)
