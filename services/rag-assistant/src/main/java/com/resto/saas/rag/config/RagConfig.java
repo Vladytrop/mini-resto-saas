@@ -49,9 +49,10 @@ public class RagConfig {
     public VectorStore vectorStore(
             JdbcTemplate jdbcTemplate,
             EmbeddingModel embeddingModel,
-            @Value("${spring.ai.vectorstore.pgvector.dimensions:1024}") int dimensions) {
+            @Value("${spring.ai.vectorstore.pgvector.dimensions:1024}") int dimensions,
+            @Value("${rag.vectorstore.table-name:rag_documents}") String tableName) {
         return new PgVectorStore(
-                "vector_store",
+                tableName,
                 jdbcTemplate,
                 embeddingModel,
                 dimensions,

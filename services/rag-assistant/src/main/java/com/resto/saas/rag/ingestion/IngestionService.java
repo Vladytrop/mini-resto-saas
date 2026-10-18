@@ -11,6 +11,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import javax.print.Doc;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -24,28 +25,35 @@ public class IngestionService {
     private final TokenTextSplitter textSplitter;
     private final VectorStore vectorStore;
     private final JdbcTemplate jdbcTemplate;
-    private MeterRegistry meterRegistry;
+    private final MeterRegistry meterRegistry;
 
     /**
      * Полный цикл загрузки из базы знаний
      * Возвращает сводку для REST-ответа
      */
     public Map<String, Object> ingestAll() {
-
         Timer.Sample sample = Timer.start(meterRegistry);
 
         List<StubConflunceLoader.Article> articles = conflunceLoader.loadArticles();
         log.info("Extract: загружено {} статей из Conflunce(заглушка)", articles.size());
 
+        int removed = jdbcTemplate.update("DELETE FROM rag_documents");
+        if (removed > 0) {
+            log.info("Очищено {} старых чанков перед повторной загрузкой из базы знаний", removed);
+        }
+
         List<Document> chunks = new ArrayList<>();
         for (StubConflunceLoader.Article article : articles) {
-            Document doc = new Document(article.content(),
-                    Map.of(
+            // В bge-m3 методы билдера называются withXxx
+            // Метаданные PgVectorStore сериализует в JSONB-колонку metadata
+            Document doc = Document.builder()
+                    .withContent(article.content())
+                    .withMetadata(Map.of(
                             "title", article.title(),
                             "aggregator", article.aggregation(),
                             "document_type", article.documentType(),
                             "source_url", article.url()
-                    ));
+                    )).build();
             // split() возвращает список чанков,
             // метаданные исходного документа копируются в каждый
             List<Document> articleChunks = textSplitter.split(doc);
@@ -59,8 +67,7 @@ public class IngestionService {
         log.info("Load: {} чанков векторизованы и сохранены в pgvector", chunks.size());
 
         long durationMs = sample.stop(
-                Timer
-                .builder("rag.ingestion.duration")
+                Timer.builder("rag.ingestion.duration")
                 .description("Полный цикл ETL загрузки из базы знаний")
                 .register(meterRegistry));
 
@@ -81,10 +88,10 @@ public class IngestionService {
     public Map<String, Object> getStats() {
         List<Map<String, Object>> byAggregator = jdbcTemplate.queryForList(
                 """
-                    SELECT COALESCE(aggregator, 'UNKNOWN') AS aggregator,
+                    SELECT COALESCE(metadata ->> 'aggregator', 'UNKNOWN') AS aggregator,
                            COUNT(*) AS chunks
                     FROM rag_documents
-                    GROUP BY aggregator
+                    GROUP BY metadata ->> 'aggregator'
                     ORDER BY chunks DESC
                     """
         );
