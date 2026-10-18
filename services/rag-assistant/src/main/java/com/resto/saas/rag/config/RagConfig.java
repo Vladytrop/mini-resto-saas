@@ -51,6 +51,7 @@ public class RagConfig {
             EmbeddingModel embeddingModel,
             @Value("${spring.ai.vectorstore.pgvector.dimensions:1024}") int dimensions) {
         return new PgVectorStore(
+                "vector_store",
                 jdbcTemplate,
                 embeddingModel,
                 dimensions,
