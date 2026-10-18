@@ -181,15 +181,38 @@ services:
       POSTGRES_DB: rag_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      ports:
-        - "5433:5432"  # Другой порт, чтобы не конфликтовать с основной БД
-      volumes:
-        - rag-postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"  # Другой порт, чтобы не конфликтовать с основной БД
+    volumes:
+      - rag-postgres-data:/var/lib/postgresql/data
+    networks:
+      - resto-network
     healthcheck:
         test: [ "CMD-SHELL", "pg_isready -U postgres" ]
         interval: 10s
         timeout: 5s
         retries: 5
+
+  rag-assistant:
+    image: resto/rag-assistant:latest
+    container_name: rag-assistant
+    ports:
+      - "8085:8085"
+    environment:
+      DB_HOST: rag-postgres
+      DB_PORT: 5432
+      DB_NAME: rag_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      REDIS_HOST: redis-master
+      REDIS_PORT: 6379
+    depends_on:
+      rag-postgres:
+        condition: service_healthy
+      redis-master:
+        condition: service_healthy
+    networks:
+      - resto-network
 
 volumes:
   postgres_data:

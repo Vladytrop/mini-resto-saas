@@ -76,8 +76,3 @@ dependencies {
 tasks.withType<Test> {
     useJUnitPlatform()
 }
-tasks.register("printRagRuntimeClasspath") {
-    doLast {
-        println(configurations.runtimeClasspath.get().asPath.replace(":", "\n"))
-    }
-}
