@@ -29,7 +29,7 @@ public record RetrievalResult(List<Document> chunks, String query) {
                 .orElse(0.0);
     }
 
-    public boolean isEmpry() {
+    public boolean isEmpty() {
         return chunks.isEmpty();
     }
 
