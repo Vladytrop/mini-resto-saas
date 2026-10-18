@@ -19,7 +19,7 @@ repositories {
     maven { url = uri("https://repo.spring.io/snapshot") }   // Для Spring AI snapshot
 }
 
-// Spring AI BOM всех зависимостей Spring AI
+// Spring AI BOM —统一管理 всех зависимостей Spring AI
 val springAiVersion = "1.0.0-M3"
 
 dependencies {
@@ -47,9 +47,6 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-database-postgresql")
-
-    // JDBC нужен для PgVectorStore
-    implementation("org.springframework.boot:spring-boot-starter-jdbc")
 
     // Для OpenAiChatOptions (используем только билдер)
     implementation("org.springframework.ai:spring-ai-openai")

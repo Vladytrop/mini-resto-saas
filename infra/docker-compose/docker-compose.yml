@@ -173,7 +173,7 @@ services:
     networks:
       - resto-network
 
-      # PostgreSQL для RAG (отдельная БД, как заявлено в резюме)
+  # PostgreSQL для RAG (отдельная БД, как заявлено в резюме)
   rag-postgres:
     image: pgvector/pgvector:pg16
     container_name: rag-postgres
@@ -188,11 +188,15 @@ services:
     networks:
       - resto-network
     healthcheck:
-        test: [ "CMD-SHELL", "pg_isready -U postgres" ]
-        interval: 10s
-        timeout: 5s
-        retries: 5
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # RAG-ассистент (Spring AI + pgvector)
+  # Dockerfile ожидает уже собранный jar (как и в остальных сервисах):
+  #   ./gradlew :services:rag-assistant:bootJar
+  #   docker build -t resto/rag-assistant services/rag-assistant
   rag-assistant:
     image: resto/rag-assistant:latest
     container_name: rag-assistant

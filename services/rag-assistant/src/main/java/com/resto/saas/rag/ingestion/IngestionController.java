@@ -1,6 +1,7 @@
 package com.resto.saas.rag.ingestion;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.resto.saas.rag.cache.RagAnswerCache;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;

@@ -25,4 +25,5 @@ logs/
 .env
 .env.local
 
+ # Локальные настройки Gradle (пути к JDK специфичны для машины разработчика)
 gradle.properties
